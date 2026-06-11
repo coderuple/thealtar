@@ -79,7 +79,7 @@ export default function Experience() {
 
   useEffect(() => {
     const wantsMotion = window.matchMedia(
-      "(min-width: 768px) and (prefers-reduced-motion: no-preference)"
+      "(prefers-reduced-motion: no-preference)"
     ).matches;
     let webgl = false;
     try {
@@ -95,7 +95,13 @@ export default function Experience() {
 
   useEffect(() => {
     if (!loaded) return;
-    gsap.to(introState, { z: 9.5, duration: 3.4, ease: "power2.out" });
+    // portrait screens dolly in less so the flame stays in proportion
+    const mobile = window.matchMedia("(max-width: 767px)").matches;
+    gsap.to(introState, {
+      z: mobile ? 13.5 : 9.5,
+      duration: 3.4,
+      ease: "power2.out",
+    });
     ScrollTrigger.refresh();
   }, [loaded]);
 

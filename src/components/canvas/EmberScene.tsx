@@ -7,7 +7,8 @@ import { Bloom, EffectComposer, Vignette } from "@react-three/postprocessing";
 import { useMemo, useRef, useState } from "react";
 import { cssVar, introState } from "@/lib/state";
 
-const PARTICLE_COUNT = 42000;
+const PARTICLE_COUNT_DESKTOP = 42000;
+const PARTICLE_COUNT_MOBILE = 18000;
 
 /* The flame column — GPU particles shaped, moved and colored entirely
    in the vertex/fragment shaders. Colors come from the CSS theme vars. */
@@ -87,7 +88,7 @@ const flameFragment = /* glsl */ `
   }
 `;
 
-function Flame() {
+function Flame({ count }: { count: number }) {
   const palette = useMemo(
     () => ({
       hot: new THREE.Color(cssVar("--flame")),
@@ -99,11 +100,11 @@ function Flame() {
 
   const geometry = useMemo(() => {
     const g = new THREE.BufferGeometry();
-    const seeds = new Float32Array(PARTICLE_COUNT * 3);
+    const seeds = new Float32Array(count * 3);
     for (let i = 0; i < seeds.length; i++) seeds[i] = Math.random();
     g.setAttribute("position", new THREE.BufferAttribute(seeds, 3));
     return g;
-  }, []);
+  }, [count]);
 
   const material = useMemo(
     () =>
@@ -259,7 +260,12 @@ function Rig() {
 }
 
 export default function EmberScene() {
-  const [dpr, setDpr] = useState(1.5);
+  // lighter scene on phones: fewer particles, lower pixel ratio
+  const [lite] = useState(
+    () => typeof window !== "undefined" &&
+      window.matchMedia("(max-width: 767px)").matches
+  );
+  const [dpr, setDpr] = useState(lite ? 1 : 1.5);
 
   return (
     <Canvas
@@ -268,11 +274,13 @@ export default function EmberScene() {
       gl={{ antialias: false, powerPreference: "high-performance" }}
     >
       <PerformanceMonitor
-        onIncline={() => setDpr(1.75)}
-        onDecline={() => setDpr(1)}
+        onIncline={() => setDpr(lite ? 1.25 : 1.75)}
+        onDecline={() => setDpr(lite ? 0.85 : 1)}
       >
         <Rig />
-        <Flame />
+        <Flame
+          count={lite ? PARTICLE_COUNT_MOBILE : PARTICLE_COUNT_DESKTOP}
+        />
         <Glow
           position={[0, -2.5, 0]}
           scale={[9, 4]}
